@@ -1,6 +1,7 @@
 package mantra_test
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -30,18 +31,23 @@ func (*testApplication) String() string {
 }
 
 type testService struct {
-	messages []mantra.Message
+	Messages []mantra.Message
 }
 
-func (ts *testService) HandleMessage(message mantra.Message) error {
-	switch message.(type) {
-	case testMessage:
-		ts.messages = append(ts.messages, message)
-		message.(testMessage).ack <- true
-	default:
-		ts.messages = append(ts.messages, message)
+func (ts *testService) Serve(ctx context.Context, msgChan <-chan mantra.Message, send mantra.SendFunc) error {
+	for message := range msgChan {
+		switch message.(type) {
+		case testMessage:
+			ts.Messages = append(ts.Messages, message)
+			close(message.(testMessage).ack)
+		default:
+			ts.Messages = append(ts.Messages, message)
+		}
 	}
+	return nil
+}
 
+func (ts *testService) Stop() error {
 	return nil
 }
 
@@ -69,13 +75,14 @@ func (testMessage) To() string { return "test" }
 
 func TestServiceCommunication(t *testing.T) {
 	ta := &testApplication{}
-	mantra.New(ta, logger)
-
-	service := &testService{}
-	err := ta.send(mantra.AddServiceMessage{service})
+	err := mantra.New(ta, logger)
 	if err != nil {
 		t.Error(err)
-		return
+	}
+	ts := &testService{Messages: []mantra.Message{}}
+	err = ta.send(mantra.AddServiceMessage{ts})
+	if err != nil {
+		t.Error(err)
 	}
 
 	t.Run("Unknow service", func(t *testing.T) {
@@ -86,21 +93,20 @@ func TestServiceCommunication(t *testing.T) {
 	})
 
 	t.Run("Sends message", func(t *testing.T) {
-
 		ack := make(chan bool)
-		err = ta.send(testMessage{"hello", ack})
+		err := ta.send(testMessage{"hello", ack})
 		if err != nil {
 			t.Error(err)
 			return
 		}
 		<-ack
 
-		if len(service.messages) < 1 {
+		if len(ts.Messages) < 1 {
 			t.Error("Should have received at least one message")
 			return
 		}
 
-		if service.messages[0].(testMessage).msg != "hello" {
+		if ts.Messages[0].(testMessage).msg != "hello" {
 			t.Error("Wrong message")
 		}
 	})

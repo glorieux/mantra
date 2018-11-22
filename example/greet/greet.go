@@ -2,6 +2,7 @@
 package greet
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -12,29 +13,24 @@ import (
 const serviceName = "greet"
 
 // Service is a greeting service
-type Service struct {
-	send mantra.SendFunc
-}
+type Service struct{}
 
-// New returns a new geet service
-func New(send mantra.SendFunc) *Service {
-	return &Service{send}
-}
-
-// HandleMessage handles incoming messages
-func (g *Service) HandleMessage(cmd mantra.Message) error {
-	switch cmd.(type) {
-	case Message:
-		h := make(hello.Message)
-		err := g.send(h)
-		if err != nil {
-			return err
+func (g *Service) Serve(ctx context.Context, msgChan <-chan mantra.Message, send mantra.SendFunc) error {
+	for msg := range msgChan {
+		switch msg.(type) {
+		case Message:
+			h := make(hello.Message)
+			send(h)
+			fmt.Printf("%s %s.\n", <-h, msg.(Message).Name)
+			msg.(Message).Greeted <- true
+		default:
+			log.Println("Unknown command")
 		}
-		fmt.Printf("%s %s.\n", <-h, cmd.(Message).Name)
-		cmd.(Message).Greeted <- true
-	default:
-		log.Println("Unknown command")
 	}
+	return nil
+}
+
+func (*Service) Stop() error {
 	return nil
 }
 

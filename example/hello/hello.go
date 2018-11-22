@@ -2,6 +2,7 @@
 package hello
 
 import (
+	"context"
 	"log"
 
 	"techmantra.io/mantra"
@@ -12,14 +13,21 @@ const serviceName = "hello"
 // Service is an hello service
 type Service struct{}
 
-// HandleMessage handles incoming messages
-func (*Service) HandleMessage(cmd mantra.Message) error {
-	switch cmd.(type) {
-	case Message:
-		cmd.(Message) <- "Hello"
-	default:
-		log.Println("Unknown command")
+// Serve runs the service
+func (*Service) Serve(ctx context.Context, msgChan <-chan mantra.Message, send mantra.SendFunc) error {
+	for msg := range msgChan {
+		switch msg.(type) {
+		case Message:
+			msg.(Message) <- "Hello"
+		default:
+			log.Println("Unknown command")
+		}
 	}
+	return nil
+}
+
+// Stop stops the service
+func (*Service) Stop() error {
 	return nil
 }
 

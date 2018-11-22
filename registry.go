@@ -1,6 +1,7 @@
 package mantra
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -14,36 +15,47 @@ const registryServiceName = "registry"
 type registry struct {
 	supervisor *suture.Supervisor
 	log        *logrus.Logger
-	r          map[string]*service
+
+	r map[string]*service
 }
 
 func newServiceRegistry(supervisor *suture.Supervisor, logger *logrus.Logger) *registry {
-	registry := &registry{supervisor, logger, make(map[string]*service)}
+	registry := &registry{
+		supervisor: supervisor,
+		log:        logger,
+		r:          make(map[string]*service),
+	}
 	registry.addService(registry)
 	return registry
 }
 
-func (sr *registry) HandleMessage(message Message) error {
-	switch message.(type) {
-	case AddServiceMessage:
-		if message.(AddServiceMessage).Service == nil {
-			return errors.New("[AddServiceMessage] Service must be passed")
+func (sr *registry) Serve(ctx context.Context, msgChan <-chan Message, send SendFunc) error {
+	for message := range msgChan {
+		switch message.(type) {
+		case AddServiceMessage:
+			if message.(AddServiceMessage).Service == nil {
+				return errors.New("[AddServiceMessage] Service must be passed")
+			}
+			sr.addService(message.(AddServiceMessage).Service)
+		case RemoveServiceMessage:
+			sr.removeService(message.(RemoveServiceMessage))
+		case StopMessage:
+			sr.log.Info(string(message.(StopMessage)))
+			sr.supervisor.Stop()
+		default:
+			return errors.New("Unknown message type")
 		}
-		sr.addService(message.(AddServiceMessage).Service)
-	case RemoveServiceMessage:
-		sr.removeService(message.(RemoveServiceMessage))
-	case StopMessage:
-		sr.log.Info(string(message.(StopMessage)))
-		sr.supervisor.Stop()
-	default:
-		return errors.New("Unknown message type")
 	}
+	return nil
+}
+
+func (sr *registry) Stop() error {
 	return nil
 }
 
 func (sr *registry) addService(service Service) {
 	sr.log.Debugf("Adding %s service", service.String())
-	sr.r[service.String()] = newService(service, sr.log)
+	sr.r[service.String()] = newService(service, sr.log, sr.send)
 	sr.r[service.String()].id = sr.supervisor.Add(sr.r[service.String()])
 }
 

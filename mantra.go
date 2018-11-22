@@ -25,13 +25,20 @@ func New(app Application, logger *logrus.Logger) error {
 	})
 	supervisor.ServeBackground()
 	registry := newServiceRegistry(supervisor, logger)
-	return app.Init(registry.send)
+
+	// Make the init call syncronous
+	err := app.Init(registry.send)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // Service is a service
 type Service interface {
 	fmt.Stringer
-	HandleMessage(Message) error
+	Serve(context.Context, <-chan Message, SendFunc) error
+	Stop() error
 }
 
 // Message is a command exchanged between services
@@ -39,46 +46,42 @@ type Message interface {
 	To() string
 }
 
-// MessageHandler handles messages being sent to a service
-type MessageHandler func(Message) error
-
 type service struct {
 	id             suture.ServiceToken
 	ctx            context.Context
 	stop           context.CancelFunc
 	log            *logrus.Logger
 	messageChan    chan Message
-	messageHandler MessageHandler
+	send           SendFunc
+	wrappedService Service
 }
 
-func newService(s Service, logger *logrus.Logger) *service {
+func newService(s Service, logger *logrus.Logger, send SendFunc) *service {
 	ctx, stop := context.WithCancel(context.Background())
 	return &service{
 		ctx:            ctx,
 		stop:           stop,
 		log:            logger,
 		messageChan:    make(chan Message),
-		messageHandler: s.HandleMessage,
+		send:           send,
+		wrappedService: s,
 	}
 }
 
 // Serve runs the service
 func (s *service) Serve() {
+	s.wrappedService.Serve(s.ctx, s.messageChan, s.send)
 	for {
 		select {
 		case <-s.ctx.Done():
 			return
-		case cmd := <-s.messageChan:
-			if err := s.messageHandler(cmd); err != nil {
-				s.log.Error("Error", err)
-				return
-			}
 		}
 	}
 }
 
 // Stop stops the service
 func (s *service) Stop() {
+	s.wrappedService.Stop()
 	s.stop()
 }
 
