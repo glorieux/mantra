@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"log"
 
-	"techmantra.io/mantra"
-	"techmantra.io/mantra/example/hello"
+	"glorieux.io/mantra"
+	"glorieux.io/mantra/example/hello"
 )
 
 const serviceName = "greet"

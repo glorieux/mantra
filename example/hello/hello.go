@@ -5,7 +5,7 @@ import (
 	"context"
 	"log"
 
-	"techmantra.io/mantra"
+	"glorieux.io/mantra"
 )
 
 const serviceName = "hello"
