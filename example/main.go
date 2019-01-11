@@ -5,9 +5,9 @@ import (
 	"os"
 
 	"github.com/sirupsen/logrus"
-	"techmantra.io/mantra"
-	"techmantra.io/mantra/example/greet"
-	"techmantra.io/mantra/example/hello"
+	"glorieux.io/mantra"
+	"glorieux.io/mantra/example/greet"
+	"glorieux.io/mantra/example/hello"
 )
 
 func main() {
