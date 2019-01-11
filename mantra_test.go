@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/sirupsen/logrus"
-	"techmantra.io/mantra"
+	"glorieux.io/mantra"
 )
 
 var logger = logrus.New()
