@@ -1,4 +1,4 @@
-module techmantra.io/mantra
+module glorieux.io/mantra
 
 require (
 	github.com/sirupsen/logrus v1.2.0
