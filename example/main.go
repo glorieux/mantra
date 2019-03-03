@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"os"
+	"os/signal"
 
 	"github.com/sirupsen/logrus"
 	"glorieux.io/mantra"
@@ -18,27 +19,11 @@ func main() {
 	if *debug {
 		log.SetLevel(logrus.DebugLevel)
 	}
-	r := &greeter{}
-	err := mantra.New(r, log)
+	err := mantra.New(log, &hello.Service{}, &greet.Service{})
 	if err != nil {
-		log.Println(err)
-		os.Exit(-1)
+		log.Fatal(err)
 	}
-	greeted := make(chan bool)
-	r.send(greet.Message{"world", greeted})
-	<-greeted
-}
-
-type greeter struct {
-	send mantra.SendFunc
-}
-
-func (g *greeter) Init(send mantra.SendFunc) error {
-	g.send = send
-	send(mantra.AddServiceMessage{&greet.Service{}})
-	send(mantra.AddServiceMessage{&hello.Service{}})
-	return nil
-}
-func (*greeter) String() string {
-	return "greeter"
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	<-c
 }

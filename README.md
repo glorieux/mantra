@@ -7,4 +7,4 @@ Highly opinionated "micro" service framework.
 
 ## Install
 
-`go get glorieux.io/mantra@v0.1.0`
+`go get glorieux.io/mantra@v0.2.0`

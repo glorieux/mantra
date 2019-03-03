@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/sirupsen/logrus"
 	"github.com/thejerf/suture"
+	"glorieux.io/slice"
 )
 
 const registryServiceName = "registry"
@@ -16,14 +18,20 @@ type registry struct {
 	supervisor *suture.Supervisor
 	log        *logrus.Logger
 
-	r map[string]*service
+	r     map[string]*service
+	hosts []string
 }
 
 func newServiceRegistry(supervisor *suture.Supervisor, logger *logrus.Logger) *registry {
+	hostname, err := os.Hostname()
+	if err != nil {
+		logger.Fatal(err)
+	}
 	registry := &registry{
 		supervisor: supervisor,
 		log:        logger,
 		r:          make(map[string]*service),
+		hosts:      []string{hostname},
 	}
 	registry.addService(registry)
 	return registry
@@ -39,6 +47,10 @@ func (sr *registry) Serve(ctx context.Context, msgChan <-chan Message, send Send
 			sr.addService(message.(AddServiceMessage).Service)
 		case RemoveServiceMessage:
 			sr.removeService(message.(RemoveServiceMessage))
+		case AddHostMessage:
+			sr.hosts = append(sr.hosts, string(message.(AddHostMessage)))
+		case RemoveHostMessage:
+			sr.removeHost(string(message.(RemoveHostMessage)))
 		case StopMessage:
 			sr.log.Info(string(message.(StopMessage)))
 			sr.supervisor.Stop()
@@ -67,6 +79,15 @@ func (sr *registry) removeService(serviceName RemoveServiceMessage) {
 	}
 	sr.supervisor.Remove(service.id)
 	delete(sr.r, string(serviceName))
+}
+
+func (sr *registry) removeHost(host string) {
+	for i, h := range sr.hosts {
+		if h == host {
+			slice.Remove(sr.hosts, i)
+			return
+		}
+	}
 }
 
 // SendFunc sends a message to a given service
@@ -102,6 +123,22 @@ type RemoveServiceMessage string
 
 // To returns the message recipient
 func (RemoveServiceMessage) To() string {
+	return registryServiceName
+}
+
+// AddHostMessage adds an host to the registry
+type AddHostMessage string
+
+// To returns the message recipient
+func (AddHostMessage) To() string {
+	return registryServiceName
+}
+
+// RemoveHostMessage removes an host from the registry
+type RemoveHostMessage string
+
+// To returns the message recipient
+func (RemoveHostMessage) To() string {
 	return registryServiceName
 }
 
