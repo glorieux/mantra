@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/sirupsen/logrus"
-	"glorieux.io/mantra"
+	"pkg.glorieux.io/mantra"
 )
 
 var logger = logrus.New()
