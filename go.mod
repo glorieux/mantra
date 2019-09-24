@@ -1,4 +1,4 @@
-module glorieux.io/mantra
+module pkg.glorieux.io/mantra
 
 require (
 	github.com/sirupsen/logrus v1.2.0
@@ -7,7 +7,8 @@ require (
 	github.com/spf13/pflag v1.0.3 // indirect
 	github.com/stretchr/testify v1.2.2
 	github.com/thejerf/suture v3.0.0+incompatible
-	glorieux.io/slice v0.1.0
-	glorieux.io/version v0.1.0
 	golang.org/x/crypto v0.0.0-20190222235706-ffb98f73852f // indirect
+	pkg.glorieux.io/slice v0.2.0
 )
+
+go 1.13

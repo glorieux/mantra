@@ -11,7 +11,8 @@ import (
 // Service is a service
 type Service interface {
 	fmt.Stringer
-	Serve(context.Context, <-chan Message, SendFunc) error
+
+	Serve(context.Context, Application) error
 	Stop() error
 }
 
@@ -20,26 +21,24 @@ type service struct {
 	ctx            context.Context
 	stop           context.CancelFunc
 	log            *logrus.Logger
-	messageChan    chan Message
-	send           SendFunc
 	wrappedService Service
+	application    Application
 }
 
-func newService(s Service, logger *logrus.Logger, send SendFunc) *service {
+func newService(s Service, logger *logrus.Logger, app Application) *service {
 	ctx, stop := context.WithCancel(context.Background())
 	return &service{
 		ctx:            ctx,
 		stop:           stop,
 		log:            logger,
-		messageChan:    make(chan Message),
-		send:           send,
 		wrappedService: s,
+		application:    app,
 	}
 }
 
 // Serve runs the service
 func (s *service) Serve() {
-	err := s.wrappedService.Serve(s.ctx, s.messageChan, s.send)
+	err := s.wrappedService.Serve(s.ctx, s.application)
 	if err != nil {
 		s.log.Error(err)
 		return

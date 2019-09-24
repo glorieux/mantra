@@ -31,3 +31,5 @@ golang.org/x/sys v0.0.0-20180905080454-ebe1bf3edb33 h1:I6FyU15t786LL7oL/hn43zqTu
 golang.org/x/sys v0.0.0-20180905080454-ebe1bf3edb33/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/text v0.3.0 h1:g61tztE5qeGQ89tm6NTjjM9VPIm088od1l6aSorWRWg=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
+pkg.glorieux.io/slice v0.2.0 h1:w8+YSLKxf54/EmBZenzPj55Q/CY+sPTjCSfCx7ImPZw=
+pkg.glorieux.io/slice v0.2.0/go.mod h1:2vXaWXs0SbZSBuMX8dSDBL24L6uWR/sLmkYo7O62uPM=

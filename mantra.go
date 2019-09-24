@@ -5,8 +5,15 @@ import (
 	"github.com/thejerf/suture"
 )
 
+type LookupFunc func(string) *Address
+
+type Application interface {
+	Lookup(string) *Address
+	NewMailbox(string) (*Address, *Mailbox)
+}
+
 // New registers a new application
-func New(logger *logrus.Logger, services ...Service) error {
+func New(logger *logrus.Logger, services ...Service) (Application, error) {
 	supervisor := suture.New("mantra", suture.Spec{
 		Log:        func(s string) { logger.Print(s) },
 		LogBadStop: badStopLogger(logger),
@@ -18,7 +25,7 @@ func New(logger *logrus.Logger, services ...Service) error {
 	for _, service := range services {
 		registry.addService(service)
 	}
-	return nil
+	return registry, nil
 }
 
 func badStopLogger(log *logrus.Logger) suture.BadStopLogger {
