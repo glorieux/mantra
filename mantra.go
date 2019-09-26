@@ -9,7 +9,7 @@ type LookupFunc func(string) *Address
 
 type Application interface {
 	Lookup(string) *Address
-	NewMailbox(string) (*Address, *Mailbox)
+	NewMailbox(string) *Mailbox
 }
 
 // New registers a new application
@@ -25,6 +25,7 @@ func New(logger *logrus.Logger, services ...Service) (Application, error) {
 	for _, service := range services {
 		registry.addService(service)
 	}
+
 	return registry, nil
 }
 

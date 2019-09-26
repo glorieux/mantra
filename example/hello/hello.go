@@ -5,24 +5,28 @@ import (
 	"context"
 	"log"
 
-	"glorieux.io/mantra"
+	"pkg.glorieux.io/mantra"
 )
 
 const serviceName = "hello"
 
 // Service is an hello service
-type Service struct{}
+type Service struct {
+	*mantra.Mailbox
+}
 
 // Serve runs the service
-func (*Service) Serve(ctx context.Context, msgChan <-chan mantra.Message, send mantra.SendFunc) error {
-	for msg := range msgChan {
-		switch msg.(type) {
+func (s *Service) Serve(ctx context.Context, app mantra.Application) error {
+	s.Mailbox = app.NewMailbox(serviceName)
+
+	s.Receive(func(message interface{}) {
+		switch message.(type) {
 		case Message:
-			msg.(Message) <- "Hello"
+			message.(Message) <- "Hello"
 		default:
 			log.Println("Unknown command")
 		}
-	}
+	})
 	return nil
 }
 

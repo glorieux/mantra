@@ -23,7 +23,7 @@ type testService struct {
 }
 
 func (ts *testService) Serve(ctx context.Context, app mantra.Application) error {
-	_, mailbox := app.NewMailbox(ts.name)
+	mailbox := app.NewMailbox(ts.name)
 	mailbox.Receive(func(message interface{}) {
 		switch message.(type) {
 		case testMessage:

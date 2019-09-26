@@ -6,9 +6,9 @@ import (
 	"os/signal"
 
 	"github.com/sirupsen/logrus"
-	"glorieux.io/mantra"
-	"glorieux.io/mantra/example/greet"
-	"glorieux.io/mantra/example/hello"
+	"pkg.glorieux.io/mantra"
+	"pkg.glorieux.io/mantra/example/greet"
+	"pkg.glorieux.io/mantra/example/hello"
 )
 
 func main() {
@@ -19,7 +19,10 @@ func main() {
 	if *debug {
 		log.SetLevel(logrus.DebugLevel)
 	}
-	err := mantra.New(log, &hello.Service{}, &greet.Service{})
+
+	hello := &hello.Service{}
+
+	_, err := mantra.New(log, hello, &greet.Service{})
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -33,25 +33,17 @@ func TestHandleMessage(t *testing.T) {
 	supervisor := suture.NewSimple("test")
 	supervisor.ServeBackground()
 	serviceRegistry := newServiceRegistry(supervisor, logrus.New())
+	serviceRegistryAddress := serviceRegistry.Lookup(registryServiceName)
 
 	t.Run("AddServiceMessage", func(t *testing.T) {
-		serviceRegistry.address.Send(AddServiceMessage(&MockedService{}))
-		// if err != nil {
-		// 	t.Error(err)
-		// }
+		serviceRegistryAddress.Send(AddServiceMessage(&MockedService{}))
 	})
 
 	t.Run("RemoveServiceMessage", func(t *testing.T) {
-		serviceRegistry.address.Send(RemoveServiceMessage("test"))
-		// if err != nil {
-		// 	t.Error(err)
-		// }
+		serviceRegistryAddress.Send(RemoveServiceMessage("test"))
 	})
 
 	t.Run("UnknownMessage", func(t *testing.T) {
-		serviceRegistry.address.Send(true)
-		// if err == nil {
-		// 	t.Error("Should return an unknow message error")
-		// }
+		serviceRegistryAddress.Send(true)
 	})
 }

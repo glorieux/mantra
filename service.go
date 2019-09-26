@@ -12,7 +12,7 @@ import (
 type Service interface {
 	fmt.Stringer
 
-	Serve(context.Context, Application) error
+	Serve(context.Context, ReceiveFunc) error
 	Stop() error
 }
 

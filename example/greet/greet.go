@@ -5,8 +5,8 @@ import (
 	"context"
 	"fmt"
 
-	"glorieux.io/mantra"
-	"glorieux.io/mantra/example/hello"
+	"pkg.glorieux.io/mantra"
+	"pkg.glorieux.io/mantra/example/hello"
 )
 
 const serviceName = "greet"
@@ -15,9 +15,11 @@ const serviceName = "greet"
 type Service struct{}
 
 // Serve serves the greet service
-func (g *Service) Serve(ctx context.Context, msgChan <-chan mantra.Message, send mantra.SendFunc) error {
+func (g *Service) Serve(ctx context.Context, app mantra.Application) error {
+	address := app.Lookup("hello")
+
 	h := make(hello.Message)
-	send(h)
+	address.Send(h)
 	fmt.Printf("%s world!\n", <-h)
 	return nil
 }

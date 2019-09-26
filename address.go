@@ -1,6 +1,7 @@
 package mantra
 
 import (
+	"fmt"
 	"log"
 	"os"
 )
@@ -19,6 +20,11 @@ func newAddress(name string, mailbox *Mailbox) *Address {
 		log.Fatal(err)
 	}
 
+	if mailbox == nil {
+		log.Fatal("Nil mailbox")
+		fmt.Println("NILLLLL")
+	}
+
 	return &Address{
 		hostname: hostname,
 		pid:      os.Getpid(),
@@ -27,6 +33,9 @@ func newAddress(name string, mailbox *Mailbox) *Address {
 	}
 }
 
+// Send sends a message
 func (a *Address) Send(msg interface{}) {
+	fmt.Printf("SEND%+v\n", a)
+	log.Println("SEND", a.mailbox)
 	a.mailbox.send(msg)
 }
