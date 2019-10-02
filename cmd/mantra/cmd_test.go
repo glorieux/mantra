@@ -35,7 +35,7 @@ func TestCreateApplication(t *testing.T) {
 		files := []string{
 			appName,
 			path.Join(appName, "cmd"),
-			path.Join(appName, "cmd", "main.go"),
+			path.Join(appName, "cmd", appName, "main.go"),
 			path.Join(appName, fmt.Sprintf("%s.go", appName)),
 		}
 

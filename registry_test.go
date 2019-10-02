@@ -1,57 +1,37 @@
 package mantra
 
 import (
-	"context"
 	"testing"
 
-	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/thejerf/suture"
 )
 
 type MockedService struct {
 	mock.Mock
+	name string
 }
 
-func (m *MockedService) Serve(ctx context.Context, msgChan <-chan Message, send SendFunc) error {
-	return nil
-}
+func (m *MockedService) Serve(mux ServeMux) {}
 
 func (*MockedService) Stop() error {
 	return nil
 }
 
 func (m *MockedService) String() string {
-	return "mockedService"
+	return m.name
 }
 
-type message bool
+func TestAddService(t *testing.T) {
+	registry := &registry{}
+	assert.Panics(t, func() {
+		registry.addService(&MockedService{name: ""})
+	}, "Empty name")
+	assert.Panics(t, func() {
+		registry.addService(&MockedService{name: "mantra"})
+	}, "Registry name")
+	assert.Panics(t, func() {
+		registry.addService(&MockedService{name: "*&(#&@^"})
+	}, "special characters")
 
-func (message) To() string { return "test" }
-
-func TestHandleMessage(t *testing.T) {
-	supervisor := suture.NewSimple("test")
-	supervisor.ServeBackground()
-	serviceRegistry := newServiceRegistry(supervisor, logrus.New())
-
-	t.Run("AddServiceMessage", func(t *testing.T) {
-		err := serviceRegistry.send(AddServiceMessage{&MockedService{}})
-		if err != nil {
-			t.Error(err)
-		}
-	})
-
-	t.Run("RemoveServiceMessage", func(t *testing.T) {
-		err := serviceRegistry.send(RemoveServiceMessage("test"))
-		if err != nil {
-			t.Error(err)
-		}
-	})
-
-	t.Run("UnknownMessage", func(t *testing.T) {
-		err := serviceRegistry.send(message(true))
-		if err == nil {
-			t.Error("Should return an unknow message error")
-		}
-	})
 }

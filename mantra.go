@@ -1,88 +1,52 @@
 package mantra
 
 import (
-	"context"
-	"fmt"
-
+	"github.com/mustafaturan/bus"
+	"github.com/mustafaturan/monoton"
+	"github.com/mustafaturan/monoton/sequencer"
 	"github.com/sirupsen/logrus"
 	"github.com/thejerf/suture"
 )
 
-// Application represents a mantra application
-type Application interface {
-	fmt.Stringer
-
-	// Init initializes the application
-	Init(SendFunc) error
-}
-
 // New registers a new application
-func New(app Application, logger *logrus.Logger) error {
-	supervisor := suture.New(app.String(), suture.Spec{
+func New(logger *logrus.Logger, services ...Service) error {
+	supervisor := suture.New("mantra", suture.Spec{
 		Log:        func(s string) { logger.Print(s) },
 		LogBadStop: badStopLogger(logger),
 		LogFailure: failureLogger(logger),
 	})
-	supervisor.ServeBackground()
-	registry := newServiceRegistry(supervisor, logger)
 
-	// Make the init call syncronous
-	err := app.Init(registry.send)
+	node := uint(1)
+	initialTime := uint(0)
+	err := monoton.Configure(sequencer.NewMillisecond(), node, initialTime)
 	if err != nil {
-		return err
+		logger.Fatal(err)
 	}
+	err = bus.Configure(bus.Config{Next: monoton.Next})
+	if err != nil {
+		logger.Fatal(err)
+	}
+	bus.RegisterHandler("eventLogger", &bus.Handler{
+		Matcher: ".*",
+		Handle: func(e *bus.Event) {
+			logger.Debugf("Event [%s] <- %+v", e.Topic.Name, e.Data)
+		},
+	})
+
+	registry := newServiceRegistry(supervisor, logger)
+	for _, service := range services {
+		registry.addService(service)
+	}
+
+	supervisor.ServeBackground()
 	return nil
 }
 
-// Service is a service
-type Service interface {
-	fmt.Stringer
-	Serve(context.Context, <-chan Message, SendFunc) error
-	Stop() error
-}
-
-// Message is a command exchanged between services
-type Message interface {
-	To() string
-}
-
-type service struct {
-	id             suture.ServiceToken
-	ctx            context.Context
-	stop           context.CancelFunc
-	log            *logrus.Logger
-	messageChan    chan Message
-	send           SendFunc
-	wrappedService Service
-}
-
-func newService(s Service, logger *logrus.Logger, send SendFunc) *service {
-	ctx, stop := context.WithCancel(context.Background())
-	return &service{
-		ctx:            ctx,
-		stop:           stop,
-		log:            logger,
-		messageChan:    make(chan Message),
-		send:           send,
-		wrappedService: s,
-	}
-}
-
-// Serve runs the service
-func (s *service) Serve() {
-	s.wrappedService.Serve(s.ctx, s.messageChan, s.send)
-	for {
-		select {
-		case <-s.ctx.Done():
-			return
-		}
-	}
-}
-
-// Stop stops the service
-func (s *service) Stop() {
-	s.wrappedService.Stop()
-	s.stop()
+// Send message to a given topic
+func Send(topic string, data interface{}) error {
+	// Leave transaction ID blank to let bus package auto assigns an ID using the provided gen
+	_, err := bus.Emit(topic, data, "")
+	return err
 }
 
 func badStopLogger(log *logrus.Logger) suture.BadStopLogger {

@@ -1,11 +1,12 @@
 package mantra_test
 
 import (
-	"context"
 	"os"
 	"testing"
 
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
+
 	"pkg.glorieux.io/mantra"
 )
 
@@ -17,111 +18,33 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-type testApplication struct {
-	send mantra.SendFunc
-}
-
-func (t *testApplication) Init(send mantra.SendFunc) error {
-	t.send = send
-	return nil
-}
-
-func (*testApplication) String() string {
-	return "test"
-}
-
 type testService struct {
-	Messages []mantra.Message
+	name string
 }
 
-func (ts *testService) Serve(ctx context.Context, msgChan <-chan mantra.Message, send mantra.SendFunc) error {
-	for message := range msgChan {
-		switch message.(type) {
-		case testMessage:
-			ts.Messages = append(ts.Messages, message)
-			close(message.(testMessage).ack)
-		default:
-			ts.Messages = append(ts.Messages, message)
-		}
-	}
-	return nil
+func (ts *testService) Serve(mux mantra.ServeMux) {
+	mux.Handle("test", func(e mantra.Event) {
+		e.Data.(chan string) <- "test"
+	})
 }
 
 func (ts *testService) Stop() error {
 	return nil
 }
 
-func (*testService) String() string {
-	return "test"
+func (ts *testService) String() string {
+	return ts.name
 }
-
-func TestNewApplication(t *testing.T) {
-	err := mantra.New(&testApplication{}, logger)
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-type unknownServiceMessage string
-
-func (unknownServiceMessage) To() string { return "unknown_service" }
-
-type testMessage struct {
-	msg string
-	ack chan bool
-}
-
-func (testMessage) To() string { return "test" }
 
 func TestServiceCommunication(t *testing.T) {
-	ta := &testApplication{}
-	err := mantra.New(ta, logger)
-	if err != nil {
-		t.Error(err)
-	}
-	ts := &testService{Messages: []mantra.Message{}}
-	err = ta.send(mantra.AddServiceMessage{ts})
+	ts1 := &testService{name: "ts1"}
+	err := mantra.New(logger, ts1)
 	if err != nil {
 		t.Error(err)
 	}
 
-	t.Run("Unknow service", func(t *testing.T) {
-		err := ta.send(unknownServiceMessage("test"))
-		if err == nil {
-			t.Error("Should return Unknow service error")
-		}
-	})
-
-	t.Run("Sends message", func(t *testing.T) {
-		ack := make(chan bool)
-		err := ta.send(testMessage{"hello", ack})
-		if err != nil {
-			t.Error(err)
-			return
-		}
-		<-ack
-
-		if len(ts.Messages) < 1 {
-			t.Error("Should have received at least one message")
-			return
-		}
-
-		if ts.Messages[0].(testMessage).msg != "hello" {
-			t.Error("Wrong message")
-		}
-	})
-
-	t.Run("Remove service", func(t *testing.T) {
-		toBeRemovedService := &testService{}
-		err := ta.send(mantra.AddServiceMessage{toBeRemovedService})
-		if err != nil {
-			t.Error(err)
-			return
-		}
-		err = ta.send(mantra.RemoveServiceMessage(toBeRemovedService.String()))
-		if err != nil {
-			t.Error(err)
-			return
-		}
-	})
+	ack := make(chan string)
+	err = mantra.Send("ts1.test", ack)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, <-ack)
 }
