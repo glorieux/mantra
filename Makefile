@@ -1,8 +1,4 @@
-.PHONY: all test ci install
-
-install:
-	go mod download
-	go mod verify
+.PHONY: test ci install
 
 all:
 	go install ./cmd/mantra
@@ -13,3 +9,7 @@ test:
 ci:
 	go mod download
 	go test -v -race
+
+install:
+	go mod download
+	go mod verify
