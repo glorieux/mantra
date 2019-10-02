@@ -1,11 +1,11 @@
 package mantra_test
 
 import (
-	"context"
 	"os"
 	"testing"
 
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 	"pkg.glorieux.io/mantra"
 )
 
@@ -18,22 +18,13 @@ func TestMain(m *testing.M) {
 }
 
 type testService struct {
-	name     string
-	Messages []string
+	name string
 }
 
-func (ts *testService) Serve(ctx context.Context, app mantra.Application) error {
-	mailbox := app.NewMailbox(ts.name)
-	mailbox.Receive(func(message interface{}) {
-		switch message.(type) {
-		case testMessage:
-			ts.Messages = append(ts.Messages, message.(testMessage).msg)
-			message.(testMessage).ack.Send(true)
-		default:
-			ts.Messages = append(ts.Messages, message.(string))
-		}
+func (ts *testService) Serve(mux mantra.ServeMux) {
+	mux.Handle("test", func(e mantra.Event) {
+		e.Data.(chan string) <- "test"
 	})
-	return nil
 }
 
 func (ts *testService) Stop() error {
@@ -44,48 +35,15 @@ func (ts *testService) String() string {
 	return ts.name
 }
 
-type testMessage struct {
-	msg string
-	ack *mantra.Address
-}
-
-func (testMessage) To() string { return "ts2" }
-
 func TestServiceCommunication(t *testing.T) {
-	ts1 := &testService{name: "ts1", Messages: []string{}}
-	ts2 := &testService{name: "ts2", Messages: []string{}}
-	app, err := mantra.New(logger, ts1, ts2)
+	ts1 := &testService{name: "ts1"}
+	err := mantra.New(logger, ts1)
 	if err != nil {
 		t.Error(err)
 	}
 
-	// ts1Address := app.Lookup("ts1")
-	ts2Address := app.Lookup("ts2")
-
-	t.Run("Sends message", func(t *testing.T) {
-		ts2Address.Send(testMessage{"hello", app.Lookup("ts1")})
-
-		if len(ts2.Messages) < 1 {
-			t.Error("Should have received at least one message")
-			return
-		}
-
-		if ts2.Messages[0] != "hello" {
-			t.Error("Wrong message")
-		}
-	})
-
-	// t.Run("Remove service", func(t *testing.T) {
-	// 	toBeRemovedService := &testService{}
-	// 	err := ts1Address.Send(mantra.AddServiceMessage(toBeRemovedService))
-	// 	if err != nil {
-	// 		t.Error(err)
-	// 		return
-	// 	}
-	// 	err = ts1Address.send(mantra.RemoveServiceMessage(toBeRemovedService.String()))
-	// 	if err != nil {
-	// 		t.Error(err)
-	// 		return
-	// 	}
-	// })
+	ack := make(chan string)
+	err = mantra.Send("ts1.test", ack)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, <-ack)
 }

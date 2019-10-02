@@ -10,7 +10,7 @@ import (
 func main() {
 	rootCmd := &cobra.Command{
 		Use:   "mantra",
-		Short: "mantra is a service based framework",
+		Short: "mantra - Let's build something",
 		Long:  ``,
 	}
 
