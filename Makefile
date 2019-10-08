@@ -6,8 +6,7 @@ all:
 test:
 	go test -v ./...
 
-ci:
-	go mod download
+ci: install all
 	go test -v -race ./...
 
 install:
