@@ -5,9 +5,9 @@
 
 Experimental framework.
 
-## Install
+## Should I use it for my own project?
 
-`go get glorieux.io/mantra@v0.2.0`
+NO. Not yet.
 
 ## Credits
 

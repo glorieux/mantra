@@ -13,6 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"pkg.glorieux.io/mantra"
+	"pkg.glorieux.io/mantra/internal/log"
 )
 
 var (
@@ -23,6 +24,7 @@ var (
 	runningDaemon *remoteDaemon
 )
 
+// Daemon is a process running in the background
 type Daemon interface {
 	mantra.Service
 }
@@ -49,44 +51,43 @@ func init() {
 	fs = afero.NewOsFs()
 	cacheDirectory, err := os.UserCacheDir()
 	if err != nil {
-		logrus.Fatal(err)
+		log.Fatal(err)
 	}
 	config.cachePath = filepath.Join(cacheDirectory, "mantra_daemon")
 	err = os.MkdirAll(config.cachePath, 0700)
 	if err != nil {
-		logrus.Fatal(err)
+		log.Fatal(err)
 	}
 }
 
-func Init(c Config) {
+// Start starts a new daemon
+func Start(c Config) {
 	config.Command = c.Command
 }
 
-func Start(services ...mantra.Service) {
-	logger := logrus.New()
-	logger.Level = logrus.InfoLevel
+// New defines a new daemon
+func New(services ...mantra.Service) {
 	file, err := os.OpenFile(
 		filepath.Join(config.cachePath, "mantra_daemon.log"),
 		os.O_APPEND|os.O_CREATE|os.O_WRONLY,
 		0666,
 	)
 	if err != nil {
-		logger.Warn("Failed to log to file, using default stdout", err)
-		logger.Out = os.Stdout
+		log.Warn("Failed to log to file, using default stdout", err)
 	} else {
-		logger.Out = file
+		log.SetOutput(file)
 	}
 
-	err = mantra.New(logger, services...)
+	err = mantra.New(services...)
 	if err != nil {
-		logger.Fatal("Mantra error", err)
+		log.Fatal("Mantra error", err)
 	}
 
 	config.Command, err = os.Executable()
 	if err != nil {
-		logger.Fatal("Mantra error", err)
+		log.Fatal("Mantra error", err)
 	}
-	logger.Info("config", config)
+	log.Info("config", config)
 
 	err = ioutil.WriteFile(
 		filepath.Join(config.cachePath, config.pidFileName()),
@@ -94,7 +95,7 @@ func Start(services ...mantra.Service) {
 		0666,
 	)
 	if err != nil {
-		logger.Error(err)
+		log.Error(err)
 	}
 }
 

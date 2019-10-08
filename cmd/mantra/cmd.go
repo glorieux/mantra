@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/spf13/afero"
+	"pkg.glorieux.io/mantra"
 )
 
 var fs = afero.NewOsFs()
@@ -20,84 +21,65 @@ var templates = template.New("").Funcs(template.FuncMap{
 })
 
 func init() {
-	template.Must(templates.New("go.mod").Parse(`module {{ . }}`))
+	template.Must(templates.New("go.mod").Parse(`module {{ .Name }}
+
+require (
+	pkg.glorieux.io/mantra v{{ .MantraVersion }}
+)
+`))
 
 	template.Must(templates.New("main").Parse(`package main
 
 import (
 	"github.com/sirupsen/logrus"
 
-	"glorieux.io/mantra"
-
-  "{{ . }}"
+	"pkg.glorieux.io/mantra"
 )
 
 func main() {
   log := logrus.New()
-  err := mantra.New({{ . }}.Application{}, log)
-  if err != nil {
-    log.Fatal(err)
-  }
-}
-`))
-
-	template.Must(templates.New("application").Parse(`package {{ . }}
-
-import "glorieux.io/mantra"
-
-// Application is a mantra application
-type Application struct {
-	send mantra.SendFunc
-}
-
-// Init initializes the application
-func (app Application) Init(send mantra.SendFunc) error {
-	app.send = send
-	return nil
-}
-
-// String returns the application name
-func (Application) String() string {
-	return "{{ . }}"
+  mantra.New(log)
 }
 `))
 
 	template.Must(templates.New("service").Parse(`package {{ . }}
 
 import (
-  "fmt"
-
-  "glorieux.io/mantra"
+  "pkg.glorieux.io/mantra"
 )
 
-type {{ . | Title }}Service struct {}
+type {{ . | Title }}Service struct{}
 
-func (s *Service) HandleMessage(msg mantra.Message) error {
-	switch msg.(type) {
-		default:
-			return fmt.Errof("Unknown message: %+v", msg)
-	}
+// Serve runs the service
+func (*{{ . | Title }}Service) Serve(mux mantra.ServeMux) {
+	mux.Handle("tmp", func(e mantra.Event) {
+		// TODO: Handle event
+	})
 }
 
-func (*Service) String() string {
+// Stop stops the service
+func (*{{ . | Title }}Service) Stop() error {
+	return nil
+}
+
+func (*{{ . | Title }}Service) String() string {
 	return "{{ . }}"
 }
 `))
 }
 
-// TODO: Create go.mod
 func createApplication(name string) error {
+	fmt.Printf("Creating application %s...\n", name)
 	if exists, _ := afero.DirExists(fs, name); exists {
 		return fmt.Errorf("Directory named %s already exists", name)
 	}
 
-	cmdDirPath := path.Join(name, "cmd", name)
-	err := fs.MkdirAll(cmdDirPath, os.ModeDir|os.ModePerm)
+	err := fs.MkdirAll(name, os.ModeDir|os.ModePerm)
 	if err != nil {
-		return fmt.Errorf("Creating cmd directory: %s", err)
+		return fmt.Errorf("Error creating %s directory: %s", name, err)
 	}
 
-	if exists, _ := afero.Exists(fs, path.Join(cmdDirPath, "main.go")); !exists {
+	if exists, _ := afero.Exists(fs, path.Join(name, "main.go")); !exists {
 		var b bytes.Buffer
 
 		err := templates.ExecuteTemplate(&b, "main", strings.ToLower(name))
@@ -105,21 +87,7 @@ func createApplication(name string) error {
 			return err
 		}
 
-		err = afero.WriteFile(fs, path.Join(cmdDirPath, "main.go"), b.Bytes(), 0644)
-		if err != nil {
-			return err
-		}
-	}
-
-	if exists, _ := afero.Exists(fs, path.Join(name, fmt.Sprintf("%s.go", name))); !exists {
-		var b bytes.Buffer
-
-		err := templates.ExecuteTemplate(&b, "application", strings.ToLower(name))
-		if err != nil {
-			return err
-		}
-
-		err = afero.WriteFile(fs, path.Join(name, fmt.Sprintf("%s.go", name)), b.Bytes(), 0644)
+		err = afero.WriteFile(fs, path.Join(name, "main.go"), b.Bytes(), 0644)
 		if err != nil {
 			return err
 		}
@@ -128,7 +96,13 @@ func createApplication(name string) error {
 	if exists, _ := afero.Exists(fs, path.Join(name, "go.mod")); !exists {
 		var b bytes.Buffer
 
-		err := templates.ExecuteTemplate(&b, "go.mod", strings.ToLower(name))
+		err := templates.ExecuteTemplate(&b, "go.mod", struct {
+			Name          string
+			MantraVersion string
+		}{
+			strings.ToLower(name),
+			mantra.VERSION,
+		})
 		if err != nil {
 			return err
 		}
@@ -138,6 +112,8 @@ func createApplication(name string) error {
 			return err
 		}
 	}
+	fmt.Println("You're good to go!")
+	fmt.Printf("You can now run [go build ./%s] to build the application.\n", name)
 	return nil
 }
 

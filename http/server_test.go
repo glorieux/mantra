@@ -4,23 +4,20 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"testing"
 
 	"github.com/gorilla/mux"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"pkg.glorieux.io/mantra"
 	mantra_http "pkg.glorieux.io/mantra/http"
+	"pkg.glorieux.io/mantra/internal/log"
 )
 
 func TestHTTPServer(t *testing.T) {
-	var logger = logrus.New()
-	logger.Out = os.Stdout
-	logger.Level = logrus.DebugLevel
+	log.SetLevel(log.DebugLevel)
 
 	server := mantra_http.NewServer(routes)
-	err := mantra.New(logger, server)
+	err := mantra.New(server)
 	assert.NoError(t, err)
 
 	res, err := http.Get(server.URL() + "/test")

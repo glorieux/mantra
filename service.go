@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/mustafaturan/bus"
-	"github.com/sirupsen/logrus"
 	"github.com/thejerf/suture"
+	"pkg.glorieux.io/mantra/internal/log"
 )
 
 // Service is a service
@@ -29,22 +29,20 @@ type ServeMux interface {
 }
 
 type service struct {
-	id             suture.ServiceToken
-	ctx            context.Context
-	stop           context.CancelFunc
-	log            *logrus.Logger
+	id   suture.ServiceToken
+	ctx  context.Context
+	stop context.CancelFunc
+
 	wrappedService Service
 	events         chan *bus.Event
-
-	eventHandlers map[string]Handler
+	eventHandlers  map[string]Handler
 }
 
-func newService(wrappedService Service, logger *logrus.Logger) *service {
+func newService(wrappedService Service) *service {
 	ctx, stop := context.WithCancel(context.Background())
 	s := &service{
 		ctx:            ctx,
 		stop:           stop,
-		log:            logger,
 		wrappedService: wrappedService,
 		events:         make(chan *bus.Event),
 		eventHandlers:  make(map[string]Handler),
@@ -76,14 +74,14 @@ func (s *service) Serve() {
 				handler(e)
 				continue
 			}
-			s.log.Warnf("Unknown topic [%s]", e.Topic.Name)
+			log.Warnf("Unknown topic [%s]", e.Topic.Name)
 		}
 	}
 }
 
 func (s *service) Handle(name string, handler Handler) {
 	topic := fmt.Sprintf("%s.%s", s.wrappedService.String(), name)
-	s.log.Debug("Registering topic ", topic)
+	log.Debug("Registering topic ", topic)
 	s.eventHandlers[topic] = handler
 	bus.RegisterTopics(topic)
 }
@@ -100,7 +98,7 @@ func (s *service) topics() []string {
 func (s *service) Stop() {
 	err := s.wrappedService.Stop()
 	if err != nil {
-		s.log.Error(err)
+		log.Error(err)
 	}
 	bus.DeregisterTopics(s.topics()...)
 	bus.DeregisterHandler(s.wrappedService.String())

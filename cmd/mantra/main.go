@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"pkg.glorieux.io/mantra"
 )
 
 func main() {
@@ -19,19 +20,33 @@ func main() {
 		Short: "Print the version number of mantra",
 		Long:  ``,
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("0.0.1")
+			fmt.Printf("v%s\n", mantra.VERSION)
 		},
 	})
 
 	newCmd := &cobra.Command{
 		Use:   "new",
-		Short: "Creates new application",
-		Long:  ``,
+		Short: "Creates new things",
 		Args:  cobra.MinimumNArgs(1),
+	}
+
+	newCmd.AddCommand(&cobra.Command{
+		Use:   "app",
+		Short: "Create a new application",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				fmt.Print("Please input the application's name: ")
+				var appName string
+				_, err := fmt.Scanln(&appName)
+				if err != nil {
+					fmt.Println(err)
+					os.Exit(-1)
+				}
+				return createApplication(appName)
+			}
 			return createApplication(args[0])
 		},
-	}
+	})
 
 	newCmd.AddCommand(&cobra.Command{
 		Use:   "service",

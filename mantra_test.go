@@ -4,17 +4,14 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
 	"pkg.glorieux.io/mantra"
+	"pkg.glorieux.io/mantra/internal/log"
 )
 
-var logger = logrus.New()
-
 func TestMain(m *testing.M) {
-	logger.Out = os.Stdout
-	logger.Level = logrus.DebugLevel
+	log.SetLevel(log.DebugLevel)
 	os.Exit(m.Run())
 }
 
@@ -38,7 +35,7 @@ func (ts *testService) String() string {
 
 func TestServiceCommunication(t *testing.T) {
 	ts1 := &testService{name: "ts1"}
-	err := mantra.New(logger, ts1)
+	err := mantra.New(ts1)
 	if err != nil {
 		t.Error(err)
 	}

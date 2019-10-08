@@ -1,25 +1,23 @@
 package mantra
 
 import (
-	"github.com/sirupsen/logrus"
 	"github.com/thejerf/suture"
-	"pkg.glorieux.io/mantra/strings"
+	"pkg.glorieux.io/mantra/internal/log"
+	"pkg.glorieux.io/mantra/internal/strings"
 )
 
 const registryServiceName = "mantra"
 
 // Registry is a registry of services
 type registry struct {
-	log        *logrus.Logger
 	supervisor *suture.Supervisor
 
 	r map[string]*service
 }
 
-func newServiceRegistry(supervisor *suture.Supervisor, logger *logrus.Logger) *registry {
+func newServiceRegistry(supervisor *suture.Supervisor) *registry {
 	registry := &registry{
 		supervisor: supervisor,
-		log:        logger,
 		r:          make(map[string]*service),
 	}
 	registry.addService(registry)
@@ -42,24 +40,24 @@ func (sr *registry) Stop() error {
 func (sr *registry) addService(service Service) {
 	// TODO: Check Service names constrains and conflicts
 	if service.String() == "" {
-		sr.log.Fatal("Service name cannot be empty")
+		log.Fatal("Service name cannot be empty")
 	}
 
 	if _, ok := sr.r[sr.String()]; ok && service.String() == sr.String() {
-		sr.log.Fatalf("Do not use %s as service name", service.String())
+		log.Fatalf("Do not use %s as service name", service.String())
 	}
 
 	if !strings.HasAlphaNumeric(service.String()) {
-		sr.log.Fatalf("Service's name can only be alpha-numeric: %s", service.String())
+		log.Fatalf("Service's name can only be alpha-numeric: %s", service.String())
 	}
 
-	sr.log.Debugf("Adding %s service", service.String())
-	sr.r[service.String()] = newService(service, sr.log)
+	log.Debugf("Adding %s service", service.String())
+	sr.r[service.String()] = newService(service)
 	sr.r[service.String()].id = sr.supervisor.Add(sr.r[service.String()])
 }
 
 func (sr *registry) removeService(service Service) {
-	sr.log.Debugf("Removing %s service", service.String())
+	log.Debugf("Removing %s service", service.String())
 	internalService, exists := sr.r[service.String()]
 	if !exists {
 		return
