@@ -8,7 +8,7 @@ test:
 
 ci:
 	go mod download
-	go test -v -race
+	go test -v -race ./...
 
 install:
 	go mod download

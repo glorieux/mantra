@@ -1,10 +1,12 @@
 package mantra
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/thejerf/suture"
 )
 
 type MockedService struct {
@@ -23,15 +25,19 @@ func (m *MockedService) String() string {
 }
 
 func TestAddService(t *testing.T) {
-	registry := &registry{}
-	assert.Panics(t, func() {
-		registry.addService(&MockedService{name: ""})
-	}, "Empty name")
-	assert.Panics(t, func() {
-		registry.addService(&MockedService{name: "mantra"})
-	}, "Registry name")
-	assert.Panics(t, func() {
-		registry.addService(&MockedService{name: "*&(#&@^"})
-	}, "special characters")
+	registry := newServiceRegistry(suture.NewSimple("test"))
 
+	err := registry.addService(&MockedService{name: ""})
+	if assert.Error(t, err) {
+		assert.Equal(t, ErrEmptyName, err)
+	}
+	err = registry.addService(&MockedService{name: registryServiceName})
+	if assert.Error(t, err) {
+		assert.Equal(t, fmt.Errorf("Do not use %s as service name", registryServiceName), err)
+	}
+
+	err = registry.addService(&MockedService{name: "@#$%^&*("})
+	if assert.Error(t, err) {
+		assert.Equal(t, ErrNotAlphaNum, err)
+	}
 }

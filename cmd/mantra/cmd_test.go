@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"path"
 	"testing"
@@ -35,7 +34,6 @@ func TestCreateApplication(t *testing.T) {
 		files := []string{
 			appName,
 			path.Join(appName, "main.go"),
-			path.Join(appName, fmt.Sprintf("%s.go", appName)),
 		}
 
 		for _, path := range files {
