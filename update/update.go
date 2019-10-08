@@ -7,6 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"pkg.glorieux.io/mantra"
 	"pkg.glorieux.io/mantra/internal/log"
+	"pkg.glorieux.io/version"
 )
 
 // Service is a service handling self-updates
@@ -20,9 +21,9 @@ type Service struct {
 // Provider provides updates
 type Provider interface {
 	Interval() time.Duration
-	// TODO use proper version
-	Versions() ([]string, error)
-	Download(version string) error
+	Versions() ([]*version.Version, error)
+	LatestVersion() (*version.Version, error)
+	Download(version *version.Version) error
 }
 
 // New returns a new update service

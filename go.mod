@@ -18,6 +18,7 @@ require (
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45 // indirect
 	google.golang.org/appengine v1.4.0
 	gopkg.in/square/go-jose.v2 v2.3.1 // indirect
+	pkg.glorieux.io/version v0.2.0
 )
 
 go 1.13
