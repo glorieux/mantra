@@ -25,11 +25,6 @@ func (m *mockProvider) Versions() ([]*version.Version, error) {
 	return args.Get(0).([]*version.Version), args.Error(1)
 }
 
-func (m *mockProvider) LatestVersion() (*version.Version, error) {
-	args := m.Called()
-	return args.Get(0).(*version.Version), args.Error(1)
-}
-
 func (m *mockProvider) Download(version *version.Version) error {
 	args := m.Called()
 	return args.Error(0)
@@ -43,11 +38,13 @@ func TestMain(m *testing.M) {
 func TestService(t *testing.T) {
 	provider := &mockProvider{}
 	provider.On("Interval").Return(5 * time.Second)
+	versions, _ := version.Versions("0.1.0", "0.2.0", "1.1.0")
+	provider.On("Versions").Return(versions, nil)
+	provider.On("Download").Return(nil)
 
-	v, _ := version.New("0.1.0")
-	provider.On("Versions").Return([]*version.Version{v}, nil)
-
-	mantra.New(New(provider))
+	v, _ := version.New("0.2.0")
+	mantra.New(New(v, provider))
 	provider.AssertCalled(t, "Interval")
 	provider.AssertCalled(t, "Versions")
+	provider.AssertCalled(t, "Download")
 }

@@ -1,6 +1,7 @@
 package update
 
 import (
+	"sort"
 	"sync"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 // Service is a service handling self-updates
 type Service struct {
 	ticker   *time.Ticker
+	current  *version.Version
 	provider Provider
 
 	sync.Mutex
@@ -22,14 +24,14 @@ type Service struct {
 type Provider interface {
 	Interval() time.Duration
 	Versions() ([]*version.Version, error)
-	LatestVersion() (*version.Version, error)
 	Download(version *version.Version) error
 }
 
 // New returns a new update service
-func New(provider Provider) mantra.Service {
+func New(current *version.Version, provider Provider) mantra.Service {
 	return &Service{
 		ticker:   time.NewTicker(provider.Interval()),
+		current:  current,
 		provider: provider,
 	}
 }
@@ -65,7 +67,19 @@ func (s *Service) check() {
 		logrus.Error("Could not check available versions", err)
 		return
 	}
+	sort.Sort(version.Ascending(versions))
+	lastVersion := versions[len(versions)-1]
 
-	// TODO if current remote version > current version
-	log.Info("Versions: ", versions)
+	if s.current.Equal(lastVersion) {
+		log.Debug("Equal")
+		return
+	}
+	if s.current.After(lastVersion) {
+		log.Debug("After")
+		return
+	}
+	err = s.provider.Download(lastVersion)
+	if err != nil {
+		log.Error(err)
+	}
 }

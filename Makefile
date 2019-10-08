@@ -6,8 +6,14 @@ all:
 test:
 	go test -v ./...
 
-ci: install all
+test-race:
 	go test -v -race ./...
+
+ci: install all test-race
+
+pre-commit: test-race
+	go mod tidy
+	go mod verify
 
 install:
 	go mod download
