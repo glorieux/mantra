@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"pkg.glorieux.io/mantra"
 	"pkg.glorieux.io/mantra/internal/log"
@@ -44,7 +45,19 @@ func TestService(t *testing.T) {
 
 	v, _ := version.New("0.2.0")
 	mantra.New(New(v, provider))
-	provider.AssertCalled(t, "Interval")
-	provider.AssertCalled(t, "Versions")
-	provider.AssertCalled(t, "Download")
+
+	maxWait := time.Second
+	waitTick := 10 * time.Millisecond
+
+	assert.Eventually(t, func() bool {
+		return provider.AssertCalled(t, "Interval")
+	}, maxWait, waitTick)
+
+	assert.Eventually(t, func() bool {
+		return provider.AssertCalled(t, "Versions")
+	}, maxWait, waitTick)
+
+	assert.Eventually(t, func() bool {
+		return provider.AssertCalled(t, "Download")
+	}, maxWait, waitTick)
 }

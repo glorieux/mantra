@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/thejerf/suture"
 	"pkg.glorieux.io/mantra/internal/log"
 	"pkg.glorieux.io/mantra/internal/strings"
 )
@@ -18,15 +17,12 @@ var (
 
 // Registry is a registry of services
 type registry struct {
-	supervisor *suture.Supervisor
-
 	r map[string]*service
 }
 
-func newServiceRegistry(supervisor *suture.Supervisor) *registry {
+func newServiceRegistry() *registry {
 	registry := &registry{
-		supervisor: supervisor,
-		r:          make(map[string]*service),
+		r: make(map[string]*service),
 	}
 	err := registry.addService(registry)
 	if err != nil {
@@ -35,7 +31,7 @@ func newServiceRegistry(supervisor *suture.Supervisor) *registry {
 	return registry
 }
 
-func (sr *registry) Serve(mux ServeMux) {
+func (sr *registry) Receive(mux ServeMux) {
 	mux.Handle("add", func(e Event) {
 		err := sr.addService(e.Data.(Service))
 		if err != nil {
@@ -45,9 +41,16 @@ func (sr *registry) Serve(mux ServeMux) {
 	mux.Handle("remove", func(e Event) {
 		sr.removeService(e.Data.(Service))
 	})
+	mux.Handle("stop", func(e Event) {
+		log.Debug("Stop event")
+		rootSupervisor.Stop()
+	})
 }
 
+func (sr *registry) Serve() {}
+
 func (sr *registry) Stop() error {
+	log.Debug("Stopping registry")
 	return nil
 }
 
@@ -66,7 +69,7 @@ func (sr *registry) addService(service Service) error {
 
 	log.Debugf("Adding %s service", service.String())
 	sr.r[service.String()] = newService(service)
-	sr.r[service.String()].id = sr.supervisor.Add(sr.r[service.String()])
+	sr.r[service.String()].id = rootSupervisor.Add(sr.r[service.String()])
 	return nil
 }
 
@@ -76,7 +79,10 @@ func (sr *registry) removeService(service Service) {
 	if !exists {
 		return
 	}
-	sr.supervisor.Remove(internalService.id)
+	err := rootSupervisor.Remove(internalService.id)
+	if err != nil {
+		log.Error(err)
+	}
 	delete(sr.r, service.String())
 }
 

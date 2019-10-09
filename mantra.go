@@ -1,6 +1,8 @@
 package mantra
 
 import (
+	"time"
+
 	"github.com/mustafaturan/bus"
 	"github.com/mustafaturan/monoton"
 	"github.com/mustafaturan/monoton/sequencer"
@@ -17,6 +19,7 @@ var rootSupervisor *suture.Supervisor
 // TODO: Rename to Start
 func New(services ...Service) error {
 	rootSupervisor = suture.New("mantra", suture.Spec{
+		Timeout:    10 * time.Second,
 		Log:        func(s string) { log.Info(s) },
 		LogBadStop: badStopLogger(),
 		LogFailure: failureLogger(),
@@ -39,7 +42,7 @@ func New(services ...Service) error {
 		},
 	})
 
-	registry := newServiceRegistry(rootSupervisor)
+	registry := newServiceRegistry()
 	for _, service := range services {
 		registry.addService(service)
 	}
@@ -50,6 +53,9 @@ func New(services ...Service) error {
 
 // Stop stops the application
 func Stop() {
+	log.Warn("Stopping...")
+	log.Warn(rootSupervisor)
+	log.Warn(rootSupervisor.Services())
 	rootSupervisor.Stop()
 }
 

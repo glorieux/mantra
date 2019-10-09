@@ -56,7 +56,9 @@ func listener() net.Listener {
 	}
 }
 
-func (s *httpServer) Serve(mantra.ServeMux) {
+func (s *httpServer) Receive(mux mantra.ServeMux) {}
+
+func (s *httpServer) Serve() {
 	go func() {
 		err := s.Server.Serve(s.listener)
 		if err != http.ErrServerClosed {

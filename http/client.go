@@ -17,7 +17,8 @@ func NewClient() mantra.Service {
 	}
 }
 
-func (*httpClient) Serve(mantra.ServeMux) {}
+func (*httpClient) Receive(mantra.ServeMux) {}
+func (*httpClient) Serve()                  {}
 
 func (*httpClient) Stop() error {
 	return nil

@@ -19,11 +19,13 @@ type testService struct {
 	name string
 }
 
-func (ts *testService) Serve(mux mantra.ServeMux) {
+func (ts *testService) Receive(mux mantra.ServeMux) {
 	mux.Handle("test", func(e mantra.Event) {
 		e.Data.(chan string) <- "test"
 	})
 }
+
+func (ts *testService) Serve() {}
 
 func (ts *testService) Stop() error {
 	return nil
@@ -44,4 +46,5 @@ func TestServiceCommunication(t *testing.T) {
 	err = mantra.Send("ts1.test", ack)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, <-ack)
+	mantra.Stop()
 }

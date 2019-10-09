@@ -13,12 +13,15 @@ func New() mantra.Service {
 	return &ShortMessageService{}
 }
 
-// Serve handles calls to the ShortMessageService
-func (s *ShortMessageService) Serve(mux mantra.ServeMux) {
+// Receive handles incoming message
+func (s *ShortMessageService) Receive(mux mantra.ServeMux) {
 	mux.Handle("send", func(e mantra.Event) {
 		s.send(e.Data.(*Message))
 	})
 }
+
+// Serve run the service
+func (s *ShortMessageService) Serve() {}
 
 // Stop stops the ShortMessageService
 func (*ShortMessageService) Stop() error {

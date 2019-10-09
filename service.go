@@ -9,11 +9,18 @@ import (
 	"pkg.glorieux.io/mantra/internal/log"
 )
 
+// EventConsumer consumes events
+type EventConsumer interface {
+	Receive(ServeMux)
+}
+
 // Service is a service
 type Service interface {
 	fmt.Stringer
 
-	Serve(ServeMux)
+	EventConsumer
+
+	Serve()
 	Stop() error
 }
 
@@ -54,7 +61,7 @@ func newService(wrappedService Service) *service {
 			Handle:  s.handler,
 		},
 	)
-	s.wrappedService.Serve(s)
+	s.wrappedService.Receive(s)
 	return s
 }
 
@@ -64,6 +71,7 @@ func (s *service) handler(e *bus.Event) {
 
 // Serve runs the service
 func (s *service) Serve() {
+	go s.wrappedService.Serve()
 	for {
 		select {
 		case <-s.ctx.Done():
@@ -96,12 +104,13 @@ func (s *service) topics() []string {
 
 // Stop stops the service
 func (s *service) Stop() {
+	log.Warnf("Stopping %s", s.wrappedService.String())
 	err := s.wrappedService.Stop()
 	if err != nil {
 		log.Error(err)
 	}
 	bus.DeregisterTopics(s.topics()...)
 	bus.DeregisterHandler(s.wrappedService.String())
-	close(s.events)
 	s.stop()
+	close(s.events)
 }
