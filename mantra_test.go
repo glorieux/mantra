@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
 	"pkg.glorieux.io/mantra"
 	"pkg.glorieux.io/mantra/internal/log"
 )
@@ -15,36 +14,29 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-type testService struct {
-	name string
-}
+type testService struct{}
 
-func (ts *testService) Receive(mux mantra.ServeMux) {
-	mux.Handle("test", func(e mantra.Event) {
-		e.Data.(chan string) <- "test"
-	})
-}
+func (*testService) TestWithoutParams() {}
 
-func (ts *testService) Serve() {}
+func (*testService) TestMessage(m chan string) {
+	m <- "test"
+}
 
 func (ts *testService) Stop() error {
 	return nil
 }
 
-func (ts *testService) String() string {
-	return ts.name
-}
-
 func TestServiceCommunication(t *testing.T) {
-	ts1 := &testService{name: "ts1"}
+	ts1 := &testService{}
+
 	err := mantra.New(ts1)
 	if err != nil {
 		t.Error(err)
 	}
 
 	ack := make(chan string)
-	err = mantra.Send("ts1.test", ack)
-	assert.NoError(t, err)
+	mantra.SendMessage(mantra.Lookup("testService"), ts1.TestWithoutParams)
+	mantra.SendMessage(mantra.Lookup("testService"), ts1.TestMessage, ack)
 	assert.NotEmpty(t, <-ack)
 	mantra.Stop()
 }

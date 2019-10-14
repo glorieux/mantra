@@ -2,7 +2,6 @@ package update
 
 import (
 	"sort"
-	"sync"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -11,14 +10,10 @@ import (
 	"pkg.glorieux.io/version"
 )
 
-// Service is a service handling self-updates
-type Service struct {
-	ticker   *time.Ticker
-	stop     chan bool
+// UpdateService is a service handling self-updates
+type UpdateService struct {
 	current  *version.Version
 	provider Provider
-
-	sync.Mutex
 }
 
 // Provider provides updates
@@ -30,44 +25,29 @@ type Provider interface {
 
 // New returns a new update service
 func New(current *version.Version, provider Provider) mantra.Service {
-	return &Service{
-		ticker:   time.NewTicker(provider.Interval()),
-		stop:     make(chan bool),
+	s := &UpdateService{
 		current:  current,
 		provider: provider,
 	}
+	go s.serve()
+	return s
 }
-
-func (s *Service) Receive(mux mantra.ServeMux) {}
 
 // Serve runs the service
 // TODO also handle manual version check
-func (s *Service) Serve() {
-	s.check()
+func (s *UpdateService) serve() {
 	for {
-		select {
-		case <-s.stop:
-			return
-		case <-s.ticker.C:
-			s.check()
-		}
+		time.Sleep(s.provider.Interval())
+		s.check()
 	}
 }
 
 // Stop stops the service
-func (s *Service) Stop() error {
-	s.stop <- true
-	s.ticker.Stop()
+func (s *UpdateService) Stop() error {
 	return nil
 }
 
-func (*Service) String() string {
-	return "update"
-}
-
-func (s *Service) check() {
-	s.Lock()
-	defer s.Unlock()
+func (s *UpdateService) check() {
 	log.Info("Checking for updates")
 	versions, err := s.provider.Versions()
 	if err != nil {
@@ -94,9 +74,6 @@ func (s *Service) check() {
 	// * Replace binary
 	// * Run healcheck
 	// * Send stop message
-	err = mantra.Send("mantra.stop", nil)
-	if err != nil {
-		log.Error(err)
-	}
+	mantra.Stop()
 	return
 }

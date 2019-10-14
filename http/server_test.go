@@ -20,12 +20,15 @@ func TestHTTPServer(t *testing.T) {
 	err := mantra.New(server)
 	assert.NoError(t, err)
 
+	server.Serve()
+
 	res, err := http.Get(server.URL() + "/test")
 	assert.NoError(t, err)
 	respBody, err := ioutil.ReadAll(res.Body)
 	res.Body.Close()
 	assert.NoError(t, err)
 	assert.Equal(t, "Response\n", string(respBody))
+	assert.NoError(t, server.Stop())
 }
 
 func routes(router *mux.Router) {

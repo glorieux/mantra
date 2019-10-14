@@ -66,7 +66,10 @@ func Start(c Config) {
 }
 
 // New defines a new daemon
-func New(services ...mantra.Service) {
+func New(debug bool, services ...mantra.Service) {
+	if debug {
+		log.SetLevel(log.DebugLevel)
+	}
 	file, err := os.OpenFile(
 		filepath.Join(config.cachePath, "mantra_daemon.log"),
 		os.O_APPEND|os.O_CREATE|os.O_WRONLY,
@@ -75,6 +78,7 @@ func New(services ...mantra.Service) {
 	if err != nil {
 		log.Warn("Failed to log to file, using default stdout", err)
 	} else {
+		log.Infof("Logging into: %s", config.cachePath)
 		log.SetOutput(file)
 	}
 

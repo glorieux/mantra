@@ -38,7 +38,7 @@ func TestMain(m *testing.M) {
 
 func TestService(t *testing.T) {
 	provider := &mockProvider{}
-	provider.On("Interval").Return(5 * time.Second)
+	provider.On("Interval").Return(5 * time.Millisecond)
 	versions, _ := version.Versions("0.1.0", "0.2.0", "1.1.0")
 	provider.On("Versions").Return(versions, nil)
 	provider.On("Download").Return(nil)

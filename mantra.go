@@ -8,6 +8,7 @@ import (
 	"github.com/mustafaturan/monoton/sequencer"
 	"github.com/thejerf/suture"
 	"pkg.glorieux.io/mantra/internal/log"
+	"pkg.glorieux.io/mantra/internal/structs"
 )
 
 // VERSION is mantra's version
@@ -18,6 +19,7 @@ var rootSupervisor *suture.Supervisor
 // New registers a new application
 // TODO: Rename to Start
 func New(services ...Service) error {
+	setFlags()
 	rootSupervisor = suture.New("mantra", suture.Spec{
 		Timeout:    10 * time.Second,
 		Log:        func(s string) { log.Info(s) },
@@ -44,7 +46,7 @@ func New(services ...Service) error {
 
 	registry := newServiceRegistry()
 	for _, service := range services {
-		registry.addService(service)
+		registry.AddService(service)
 	}
 
 	rootSupervisor.ServeBackground()
@@ -53,23 +55,29 @@ func New(services ...Service) error {
 
 // Stop stops the application
 func Stop() {
-	log.Warn("Stopping...")
-	log.Warn(rootSupervisor)
-	log.Warn(rootSupervisor.Services())
+	log.Warn("Stopping all services...")
 	rootSupervisor.Stop()
 }
 
-// Send message to a given topic
-func Send(topic string, data interface{}) error {
-	// Leave transaction ID blank to let bus package auto assigns an ID using the
-	// provided generator
-	_, err := bus.Emit(topic, data, "")
-	return err
+// SendMessage supperseeds Send
+func SendMessage(address *Address, method interface{}, args ...interface{}) {
+	topic := newTopic(address, structs.FuncName(method))
+	log.Debug("TOPIC: ", topic)
+	_, err := bus.Emit(topic.String(), args, "")
+	if err != nil {
+		log.Error(err)
+	}
+}
+
+// Lookup returns a services address
+func Lookup(name string) *Address {
+	// TODO verify is actually exists
+	return newAddress(name)
 }
 
 func badStopLogger() suture.BadStopLogger {
 	return func(sup *suture.Supervisor, service suture.Service, msg string) {
-		log.Error(service, msg)
+		log.Errorf("Bad stop: %v %s", service, msg)
 	}
 }
 

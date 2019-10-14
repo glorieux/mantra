@@ -1,7 +1,6 @@
 package sms
 
 import (
-	"pkg.glorieux.io/mantra"
 	"pkg.glorieux.io/mantra/internal/todo"
 )
 
@@ -9,27 +8,8 @@ import (
 type ShortMessageService struct{}
 
 // New returns a new short service message
-func New() mantra.Service {
+func New() *ShortMessageService {
 	return &ShortMessageService{}
-}
-
-// Receive handles incoming message
-func (s *ShortMessageService) Receive(mux mantra.ServeMux) {
-	mux.Handle("send", func(e mantra.Event) {
-		s.send(e.Data.(*Message))
-	})
-}
-
-// Serve run the service
-func (s *ShortMessageService) Serve() {}
-
-// Stop stops the ShortMessageService
-func (*ShortMessageService) Stop() error {
-	return nil
-}
-
-func (*ShortMessageService) String() string {
-	return "sms"
 }
 
 // Message is a phone message
@@ -41,7 +21,11 @@ type Message struct {
 	Content string
 }
 
-// send sends a short message
-func (*ShortMessageService) send(message *Message) {
+func (*ShortMessageService) Send(msg *Message) {
 	todo.NotImplemented("sms.send")
+}
+
+// Stop stops the ShortMessageService
+func (*ShortMessageService) Stop() error {
+	return nil
 }

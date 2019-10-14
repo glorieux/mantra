@@ -9,6 +9,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"pkg.glorieux.io/mantra"
+	internalNet "pkg.glorieux.io/mantra/internal/net"
 )
 
 // RoutesFunc is a function defining HTTP routes
@@ -19,6 +20,7 @@ type Server interface {
 	mantra.Service
 
 	URL() string
+	Serve()
 }
 
 type httpServer struct {
@@ -40,23 +42,9 @@ func NewServer(routes RoutesFunc) Server {
 			MaxHeaderBytes: 1 << 20,
 			// TODO Add SSL support
 		},
-		listener: listener(),
+		listener: internalNet.ListenerFromPort(8080),
 	}
 }
-
-func listener() net.Listener {
-	port := 4242
-
-	for {
-		ln, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", port))
-		if err == nil {
-			return ln
-		}
-		port++
-	}
-}
-
-func (s *httpServer) Receive(mux mantra.ServeMux) {}
 
 func (s *httpServer) Serve() {
 	go func() {

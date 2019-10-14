@@ -16,6 +16,8 @@ func TestMain(m *testing.M) {
 }
 
 func TestSend(t *testing.T) {
-	mantra.New(sms.New())
-	mantra.Send("sms.send", &sms.Message{"", ""})
+	s := sms.New()
+	mantra.New(s)
+	mantra.SendMessage(mantra.Lookup("ShortMessageService"), s.Send, &sms.Message{})
+	mantra.Stop()
 }

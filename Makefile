@@ -14,6 +14,7 @@ ci: install all test-race
 pre-commit: test-race
 	go mod tidy
 	go mod verify
+	go vet ./...
 
 install:
 	go mod download

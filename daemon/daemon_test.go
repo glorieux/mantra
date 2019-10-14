@@ -17,7 +17,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestStart(t *testing.T) {
-	daemon.New()
+	daemon.New(true)
 }
 
 // TODO
