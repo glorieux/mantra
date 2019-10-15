@@ -10,4 +10,5 @@ func TestAddress(t *testing.T) {
 	address := newAddress("test")
 	parsedAddress := parseAddress("plop@plop#test")
 	assert.Equal(t, address.ServiceName, parsedAddress.ServiceName)
+	assert.Equal(t, "plop", parsedAddress.HostName)
 }

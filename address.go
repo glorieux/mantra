@@ -41,7 +41,7 @@ func parseAddress(a string) *Address {
 	hostServiceSeparator := strings.Index(a, "#")
 
 	return &Address{
-		HostName:    a[pidHostSeparator+1 : hostServiceSeparator-1],
+		HostName:    a[pidHostSeparator+1 : hostServiceSeparator],
 		ServiceName: a[hostServiceSeparator+1:],
 	}
 }
