@@ -1,6 +1,7 @@
 module pkg.glorieux.io/mantra
 
 require (
+	github.com/boltdb/bolt v1.3.1 // indirect
 	github.com/coreos/go-oidc v2.1.0+incompatible
 	github.com/gorilla/mux v1.7.3
 	github.com/gorilla/sessions v1.2.0

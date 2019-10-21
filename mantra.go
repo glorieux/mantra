@@ -12,7 +12,7 @@ import (
 )
 
 // VERSION is mantra's version
-const VERSION = "0.2.0"
+const VERSION = "0.3.0"
 
 var rootSupervisor *suture.Supervisor
 
@@ -59,8 +59,8 @@ func Stop() {
 	rootSupervisor.Stop()
 }
 
-// SendMessage supperseeds Send
-func SendMessage(address *Address, method interface{}, args ...interface{}) {
+// Send supperseeds Send
+func Send(address *Address, method interface{}, args ...interface{}) {
 	topic := newTopic(address, structs.FuncName(method))
 	log.Debug("TOPIC: ", topic)
 	_, err := bus.Emit(topic.String(), args, "")

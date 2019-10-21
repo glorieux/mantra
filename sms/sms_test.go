@@ -18,6 +18,6 @@ func TestMain(m *testing.M) {
 func TestSend(t *testing.T) {
 	s := sms.New()
 	mantra.New(s)
-	mantra.SendMessage(mantra.Lookup("ShortMessageService"), s.Send, &sms.Message{})
+	mantra.Send(mantra.Lookup("ShortMessageService"), s.Send, &sms.Message{})
 	mantra.Stop()
 }
