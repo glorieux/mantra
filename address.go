@@ -5,13 +5,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/mustafaturan/bus"
 	"pkg.glorieux.io/mantra/internal/log"
 )
-
-// Addressable means a type has an Address
-type Addressable interface {
-	Address() *Address
-}
 
 // Address is a service's address
 type Address struct {
@@ -43,6 +39,16 @@ func parseAddress(a string) *Address {
 	return &Address{
 		HostName:    a[pidHostSeparator+1 : hostServiceSeparator],
 		ServiceName: a[hostServiceSeparator+1:],
+	}
+}
+
+// Send sends a message
+func (a *Address) Send(method string, args ...interface{}) {
+	topic := newTopic(a, method)
+	log.Debug("TOPIC: ", topic)
+	_, err := bus.Emit(topic.String(), args, "")
+	if err != nil {
+		log.Error(err)
 	}
 }
 

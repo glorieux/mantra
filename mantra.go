@@ -60,6 +60,7 @@ func Stop() {
 }
 
 // Send supperseeds Send
+// Deprecated: use it from address directly
 func Send(address *Address, method interface{}, args ...interface{}) {
 	topic := newTopic(address, structs.FuncName(method))
 	log.Debug("TOPIC: ", topic)

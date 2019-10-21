@@ -34,9 +34,10 @@ func TestServiceCommunication(t *testing.T) {
 		t.Error(err)
 	}
 
+	ts := mantra.Lookup("testService")
+	ts.Send("TestWithoutParams")
 	ack := make(chan string)
-	mantra.Send(mantra.Lookup("testService"), ts1.TestWithoutParams)
-	mantra.Send(mantra.Lookup("testService"), ts1.TestMessage, ack)
+	ts.Send("TestMessage", ack)
 	assert.NotEmpty(t, <-ack)
 	mantra.Stop()
 }

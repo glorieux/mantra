@@ -28,7 +28,6 @@ func TestName(t *testing.T) {
 		testInt := TestInt(42)
 		assert.Equal(t, "TestInt", structs.Name(testInt))
 	})
-
 }
 
 func TestMethods(t *testing.T) {
