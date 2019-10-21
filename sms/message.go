@@ -4,13 +4,13 @@ import "fmt"
 
 // Message is a phone message
 type Message struct {
-	Sender string
+	Sender string `schema:"From"`
 
 	// TODO: enforce phone number
-	Recipient string
+	Recipient string `schema:"To"`
 
 	// TODO: enforce limit
-	Content string
+	Content string `schema:"Body"`
 }
 
 // Response returns a response to the message
