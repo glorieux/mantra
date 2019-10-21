@@ -13,6 +13,10 @@ import (
 	"pkg.glorieux.io/mantra/internal/log"
 )
 
+const (
+	name = "mantra_daemon"
+)
+
 var (
 	fs   afero.Fs
 	once sync.Once
@@ -49,7 +53,7 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	config.cachePath = filepath.Join(cacheDirectory, "mantra_daemon")
+	config.cachePath = filepath.Join(cacheDirectory, name)
 	err = os.MkdirAll(config.cachePath, 0700)
 	if err != nil {
 		log.Fatal(err)
@@ -67,7 +71,7 @@ func New(debug bool, services ...mantra.Service) {
 		log.SetLevel(log.DebugLevel)
 	}
 	file, err := os.OpenFile(
-		filepath.Join(config.cachePath, "mantra_daemon.log"),
+		filepath.Join(config.cachePath, fmt.Sprintf("%s.log", name)),
 		os.O_APPEND|os.O_CREATE|os.O_WRONLY,
 		0666,
 	)
